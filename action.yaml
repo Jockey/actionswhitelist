@@ -67,10 +67,3 @@ runs:
           echo "Failed to verify IP $ipv4 in access rules after $max_retries retries."
           exit 1
         fi
-    - name: Delete IP from Access Rules
-      uses: gacts/run-and-post-run@v1
-      with:
-        post: |
-          rule_id=${{ env.rule_id }}
-          echo "Deleting rule with ID: $rule_id"
-          curl --request DELETE --url https://api.cloudflare.com/client/v4/zones/${{ inputs.cf_zone_id }}/firewall/access_rules/rules/$rule_id --header 'Content-Type: application/json' --header 'Authorization: Bearer ${{ inputs.cf_api_token }}' || exit 1
