@@ -1,0 +1,45 @@
+name: Playwright Tests
+on:
+    pull_request:
+        branches:
+            - develop
+            
+  manage-ip-whitelist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Bypass Cloudflare for GitHub Action
+        uses: Jockey/actionswhitelist/.github/workflows/action.yaml@master
+        with:
+          cf_zone_id: ${{ secrets.CF_ZONE_ID }}
+          cf_api_token: ${{ secrets.CF_API_TOKEN }}
+      - name: Send request to Cloudflare-protected server
+        run: curl https://dev.briefsqa.com
+  jobs:
+    test:
+          timeout-minutes: 60
+          runs-on: ubuntu-latest
+          steps:
+              - uses: actions/checkout@v4
+              - uses: actions/setup-node@v4
+                with:
+                    node-version: lts/*
+              - name: Install dependencies
+                run: npm install -g yarn && yarn
+              - name: Install Playwright Browsers
+                run: yarn playwright install --with-deps
+              - name: Run Playwright tests
+                run: yarn playwright test
+              - uses: actions/upload-artifact@v4
+                if: always()
+                with:
+                    name: playwright-report
+                    path: playwright-report/
+                    retention-days: 30
+    # remove-ip-whitelist:
+    #     - name: Delete IP from Access Rules
+    #       uses: gacts/run-and-post-run@v1
+    #       with:
+    #           post: |
+    #             rule_id=${{ env.rule_id }}
+    #             echo "Deleting rule with ID: $rule_id"
+    #             curl --request DELETE --url https://api.cloudflare.com/client/v4/zones/${{ inputs.cf_zone_id }}/firewall/access_rules/rules/$rule_id --header 'Content-Type: application/json' --header 'Authorization: Bearer ${{ inputs.cf_api_token }}' || exit 1
