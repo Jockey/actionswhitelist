@@ -1,0 +1,16 @@
+name: Delete Cloudflare WAF hole punch
+description: Deletes a Cloudflare WAF Rule for the current IP of the Github Actions runner.
+
+on: workflow_call
+
+jobs:
+  remove_cf_bypass:
+  runs-on: ubuntu-latest
+  if: ${{ always() }}
+  needs: [create_cf_bypass, run_playwright_tests]
+  steps:
+    - name: Delete IP from Access Rules
+      shell: bash
+      run: |
+          echo "Deleting rule with ID: ${{ needs.create_cf_bypass.outputs.rule_id }}"
+          curl https://api.cloudflare.com/client/v4/zones/${{ secrets.CF_ZONE_ID }}/firewall/access_rules/rules/${{ needs.create_cf_bypass.outputs.rule_id }} -X DELETE -H 'Authorization: Bearer ${{ secrets.CF_API_TOKEN }}' -H 'Content-Type:application/json' || exit 1
